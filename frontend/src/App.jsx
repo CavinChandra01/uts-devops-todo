@@ -64,7 +64,7 @@ export default function App() {
     <div className="page">
       <main className="card">
         <header>
-          <h1>Daftar Tugas</h1>
+          <h1>Daftar Tugas Kelompok TheTarik</h1>
           <p className="subtitle">Aplikasi full stack React + Express + MySQL yang berjalan di container Docker</p>
         </header>
 
