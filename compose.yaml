@@ -1,0 +1,74 @@
+# Docker Compose: frontend (Nginx + React), backend (Express), dan database (MySQL).
+#
+# Menjalankan di laptop (build dari source):
+#   cp .env.example .env        (lalu isi password)
+#   docker compose up -d --build
+#   buka http://localhost:8080
+#
+# Server deployment (dipakai pipeline CD, image diambil dari Docker Hub):
+#   docker compose pull backend frontend
+#   docker compose up -d --no-build --wait
+
+name: uts-todo
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-todo}
+      MYSQL_USER: ${DB_USER:-todo}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Isi DB_PASSWORD di file .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Isi DB_ROOT_PASSWORD di file .env}
+    volumes:
+      - db-data:/var/lib/mysql          # data tetap tersimpan walau container dihapus
+    networks:
+      - backend-net                      # database tidak terhubung ke network frontend
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
+    image: ${DOCKERHUB_USERNAME:-local}/uts-todo-backend:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-todo}
+      DB_USER: ${DB_USER:-todo}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy       # backend baru dijalankan setelah MySQL siap
+    networks:
+      - backend-net
+      - frontend-net
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
+    image: ${DOCKERHUB_USERNAME:-local}/uts-todo-frontend:${TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"           # satu-satunya port yang dibuka ke luar
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - frontend-net
+
+networks:
+  frontend-net:
+  backend-net:
+
+volumes:
+  db-data:

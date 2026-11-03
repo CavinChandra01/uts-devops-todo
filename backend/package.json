@@ -1,0 +1,24 @@
+{
+  "name": "uts-todo-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "REST API Daftar Tugas (Express + MySQL), dikembangkan dari docker/awesome-compose react-express-mysql",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "mocha --exit --timeout 10000"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "knex": "^3.1.0",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.14.0"
+  },
+  "devDependencies": {
+    "mocha": "^11.1.0",
+    "supertest": "^7.1.0"
+  }
+}
