@@ -1,7 +1,7 @@
 # Pipeline CI/CD aplikasi Daftar Tugas
 #
 #   CI  (setiap push & pull request):
-#       1. Unit test backend & frontend
+#       1. Lint (ESLint) + unit test backend & frontend
 #       2. Build semua image Docker + integration test stack lengkap (frontend + backend + MySQL)
 #   CD  (hanya push ke branch main):
 #       3. Build & push image ke Docker Hub (tag: latest dan commit SHA)
@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   unit-test:
-    name: "CI 1 - Unit test"
+    name: "CI 1 - Lint & unit test"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -39,16 +39,18 @@ jobs:
             backend/package-lock.json
             frontend/package-lock.json
 
-      - name: Test backend
+      - name: Lint & test backend
         working-directory: backend
         run: |
           npm ci
+          npm run lint
           npm test
 
-      - name: Test & build frontend
+      - name: Lint, test & build frontend
         working-directory: frontend
         run: |
           npm ci
+          npm run lint
           npm test
           npm run build
 

@@ -24,6 +24,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json healthcheck.js ./
 COPY src ./src
+COPY migrations ./migrations
 
 # Versi aplikasi (diisi commit SHA oleh pipeline CI/CD) dan port
 ARG APP_VERSION=dev

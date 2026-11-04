@@ -1,4 +1,6 @@
 // Semua request ke backend lewat path relatif /api (diteruskan Nginx ke container backend).
+import { buildQuery } from "./utils.js";
+
 async function request(method, path, body) {
   const res = await fetch(`/api${path}`, {
     method,
@@ -13,8 +15,10 @@ async function request(method, path, body) {
 
 export const api = {
   info: () => request("GET", "/info"),
-  list: () => request("GET", "/todos"),
+  list: (filter) => request("GET", `/todos${buildQuery(filter)}`),
+  stats: () => request("GET", "/todos/stats"),
   create: (title) => request("POST", "/todos", { title }),
+  rename: (id, title) => request("PATCH", `/todos/${id}`, { title }),
   setDone: (id, done) => request("PATCH", `/todos/${id}`, { done }),
   remove: (id) => request("DELETE", `/todos/${id}`),
 };

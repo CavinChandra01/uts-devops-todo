@@ -18,13 +18,17 @@ Proyek UTS mata kuliah Pengembangan dan Operasi. Aplikasi web **Daftar Tugas (To
 | ... | ... | Laporan & video |
 | ... | ... | Dokumentasi & pengujian aplikasi |
 
-## Cara menggunakan aplikasi
+## Fitur aplikasi
 
-1. Buka aplikasi di browser (`http://localhost:8080` atau alamat server).
-2. Tulis tugas baru di kotak isian, lalu klik **Tambah**.
-3. Centang kotak di samping tugas untuk menandainya selesai (tugas akan dicoret).
-4. Klik **Hapus** untuk menghapus tugas.
-5. Footer menampilkan versi frontend, versi backend (commit SHA), dan versi MySQL yang sedang berjalan.
+| No | Fitur | Cara pakai |
+|---|---|---|
+| 1 | **Tambah tugas** | Tulis judul di kotak isian (maks. 200 karakter), klik **Tambah** |
+| 2 | **Edit judul tugas** | Klik **Edit** di samping tugas, ubah judul, klik **Simpan** (atau **Batal** / tombol Esc) |
+| 3 | **Tandai selesai** | Centang kotak di samping tugas; tugas dicoret. Hilangkan centang untuk membatalkan |
+| 4 | **Hapus tugas** | Klik **Hapus** di samping tugas |
+| 5 | **Filter & pencarian** | Pilih tab **Semua / Belum selesai / Selesai**, atau ketik kata kunci di kotak **Cari tugas** |
+
+Selain itu, ringkasan di atas daftar menampilkan jumlah tugas, yang selesai, dan yang tersisa. Footer menampilkan versi frontend, versi backend (commit SHA), dan versi MySQL yang sedang berjalan. Semua data disimpan di MySQL, sehingga filter dan pencarian diproses oleh query SQL di database.
 
 ## Arsitektur container
 
@@ -83,12 +87,14 @@ flowchart LR
 
 | Tahap | Kapan berjalan | Isi |
 |---|---|---|
-| **CI 1 - Unit test** | Setiap push & pull request | `npm test` backend (Mocha + Supertest, 10 test) dan frontend (Vitest), lalu build frontend |
-| **CI 2 - Integration test** | Setelah CI 1 lolos | `docker compose build`, menjalankan 3 container sampai healthy, lalu `scripts/smoke-test.sh` menguji alur frontend → backend → MySQL (tambah, tandai selesai, hapus, validasi) |
+| **CI 1 - Lint & unit test** | Setiap push & pull request | `npm run lint` (ESLint) lalu `npm test` untuk backend (Mocha + Supertest, 19 test) dan frontend (Vitest, 7 test), lalu build frontend |
+| **CI 2 - Integration test** | Setelah CI 1 lolos | `docker compose build`, menjalankan 3 container sampai healthy, lalu `scripts/smoke-test.sh` (14 pengecekan) menguji alur frontend → backend → MySQL untuk kelima fitur dan validasi input |
 | **CD 1 - Push image** | Push ke `main` setelah CI lolos | Build dan push image ke Docker Hub dengan tag `latest` dan 7 karakter commit SHA |
 | **CD 2 - Deploy** | Setelah CD 1 | Di server (self-hosted runner): `docker compose pull` lalu `docker compose up -d --wait`, container diganti dengan versi baru tanpa kehilangan data |
 
 Jika satu tahap gagal, tahap berikutnya tidak dijalankan, sehingga kode yang rusak tidak pernah ter-deploy.
+
+**Kenapa self-hosted runner, bukan Watchtower?** Watchtower memantau Docker Hub secara berkala dan mengganti container ketika ada image baru. Kelompok ini memakai job deploy di self-hosted runner karena deploy hanya terjadi setelah semua tes lolos, statusnya terlihat di tab Actions bersama tahap CI, dan `docker compose up --wait` memastikan container baru sudah healthy sebelum job dinyatakan berhasil.
 
 ### Setup CI/CD (sekali saja)
 
@@ -102,14 +108,28 @@ Jika satu tahap gagal, tahap berikutnya tidak dijalankan, sehingga kode yang rus
    - Runner berstatus **Idle** di halaman Runners berarti siap menerima job deploy
 4. Push ke branch `main`, lalu pantau di tab **Actions**.
 
-> **Keamanan:** self-hosted runner menjalankan kode dari repository ini. Gunakan repository **private**, atau aktifkan **Settings → Actions → General → "Require approval for all external contributors"** agar pull request dari orang lain tidak bisa menjalankan job di server.
+> **Keamanan:** self-hosted runner menjalankan kode dari repository ini. Jika repository **public**, aktifkan **Settings → Actions → General → "Require approval for all external contributors"** agar pull request dari orang lain tidak bisa menjalankan job di server.
 
-### Demonstrasi CD
+### Demonstrasi CD (frontend, backend, database)
 
-1. Ubah sesuatu yang terlihat, misalnya judul di `frontend/src/App.jsx`.
-2. `git commit` dan `git push` ke `main`.
-3. Buka tab **Actions**: keempat job berjalan berurutan.
-4. Setelah job **CD 2 - Deploy** selesai, refresh aplikasi: perubahan tampil dan footer menunjukkan commit SHA yang baru.
+Setiap perubahan di-push oleh anggota yang berbeda dari akun GitHub masing-masing (anggota diundang lewat **Settings → Collaborators**).
+
+| Perubahan | Contoh | Bukti setelah job CD 2 hijau |
+|---|---|---|
+| Frontend | Ubah teks subtitle di `frontend/src/App.jsx` | Refresh browser: teks berubah, footer menampilkan commit SHA baru |
+| Backend | Ubah `MAX_TITLE` di `backend/src/server.js`, atau tambah field di respons `/api/info` | Buka `http://localhost:8080/api/info` |
+| Database | Salin `contoh-demo/20261110000000_add_priority.js` ke `backend/migrations/` | `docker compose exec db mysql -u todo -p todo -e "DESCRIBE todos;"` menampilkan kolom `priority`, data lama tetap ada |
+
+## Migrasi database
+
+Struktur tabel dikelola dengan **knex migrations** di folder `backend/migrations/`. Saat container backend start, `migrate.latest()` menjalankan migrasi yang belum pernah dijalankan dan mencatatnya di tabel `knex_migrations`. Perubahan struktur database cukup dilakukan dengan menambah file migrasi baru, lalu push. Pipeline akan menguji dan men-deploy-nya seperti kode biasa.
+
+## Linting dan test lokal
+
+```bash
+cd backend  && npm ci && npm run lint && npm test
+cd frontend && npm ci && npm run lint && npm test && npm run build
+```
 
 ## Struktur repository
 
@@ -120,17 +140,43 @@ Jika satu tahap gagal, tahap berikutnya tidak dijalankan, sehingga kode yang rus
 │   ├── Dockerfile                # multi-stage: deps, test, production (non-root, healthcheck)
 │   ├── .dockerignore
 │   ├── healthcheck.js            # dipanggil HEALTHCHECK Docker
+│   ├── eslint.config.js          # aturan linting
+│   ├── migrations/               # migrasi struktur tabel (knex)
 │   ├── src/                      # config, repository (MySQL/knex), server (REST API), index
 │   └── test/api.test.js          # unit test API
 ├── frontend/
 │   ├── Dockerfile                # multi-stage: build (Node) -> Nginx
 │   ├── .dockerignore
 │   ├── nginx.conf                # sajikan React + reverse proxy /api ke backend
+│   ├── eslint.config.js          # aturan linting
 │   └── src/                      # aplikasi React
+├── contoh-demo/                  # contoh migrasi database untuk demo video
 ├── scripts/smoke-test.sh         # integration test end-to-end
 ├── compose.yaml                  # definisi 3 service, 2 network, 1 volume
 └── .env.example                  # contoh konfigurasi (salin menjadi .env)
 ```
+
+## Library dan versi
+
+Versi berikut terkunci di `package-lock.json` sehingga build di laptop dan di CI selalu sama.
+
+| Bagian | Library / image | Versi | Fungsi |
+|---|---|---|---|
+| Frontend | react, react-dom | 19.3.1 | Komponen antarmuka |
+| Frontend | vite | 7.3.7 | Build tool |
+| Frontend | @vitejs/plugin-react | 5.2.0 | Dukungan JSX di Vite |
+| Frontend | vitest | 3.2.7 | Unit test |
+| Frontend | eslint-plugin-react-hooks | 7.1.1 | Aturan lint React Hooks |
+| Backend | express | 5.3.0 | Web framework REST API |
+| Backend | knex | 3.3.0 | Query builder & migrasi |
+| Backend | mysql2 | 3.24.6 | Driver MySQL |
+| Backend | morgan | 1.12.1 | Log request HTTP |
+| Backend | mocha | 11.8.0 | Test runner |
+| Backend | supertest | 7.3.1 | Test endpoint HTTP |
+| Keduanya | eslint, @eslint/js | 10.14.0, 10.0.1 | Linting |
+| Image | node | 22-alpine | Runtime backend & tahap build frontend |
+| Image | nginx | 1.28-alpine | Web server frontend & reverse proxy |
+| Image | mysql | 8.4 | Database |
 
 ## REST API
 
@@ -138,9 +184,10 @@ Jika satu tahap gagal, tahap berikutnya tidak dijalankan, sehingga kode yang rus
 |---|---|---|
 | GET | `/healthz` | Health check backend |
 | GET | `/api/info` | Versi backend dan MySQL |
-| GET | `/api/todos` | Daftar tugas (terbaru di atas) |
+| GET | `/api/todos?status=&q=` | Daftar tugas (terbaru di atas). `status`: `all`, `active`, `done`; `q`: kata kunci judul |
+| GET | `/api/todos/stats` | Ringkasan `{total, done, remaining}` |
 | POST | `/api/todos` | Tambah tugas, body `{"title": "..."}` |
-| PATCH | `/api/todos/:id` | Ubah status, body `{"done": true}` |
+| PATCH | `/api/todos/:id` | Edit judul dan/atau status, body `{"title": "..."}` atau `{"done": true}` |
 | DELETE | `/api/todos/:id` | Hapus tugas |
 
 ## Sumber referensi
@@ -150,4 +197,4 @@ Aplikasi ini dikembangkan dari contoh resmi Docker:
 - [docker/awesome-compose: react-express-mysql](https://github.com/docker/awesome-compose/tree/master/react-express-mysql) (lisensi CC0 1.0) sebagai kerangka arsitektur React + Express + MySQL dengan Docker Compose
 - Backend contoh tersebut berbasis [node-docker-good-defaults](https://github.com/BretFisher/node-docker-good-defaults) oleh Bret Fisher (lisensi MIT)
 
-Pengembangan yang dilakukan kelompok: fitur CRUD Daftar Tugas (frontend dan backend), migrasi tabel otomatis, unit test, Dockerfile produksi multi-stage dengan user non-root, konfigurasi Nginx reverse proxy, pemisahan network, healthcheck berantai, smoke test, serta pipeline CI/CD GitHub Actions dengan Docker Hub dan self-hosted runner.
+Pengembangan yang dilakukan kelompok: lima fitur Daftar Tugas (tambah, edit, tandai selesai, hapus, filter & pencarian) di frontend dan backend, migrasi database dengan knex, linting ESLint, unit test, Dockerfile produksi multi-stage dengan user non-root, konfigurasi Nginx reverse proxy, pemisahan network, healthcheck berantai, smoke test, serta pipeline CI/CD GitHub Actions dengan Docker Hub dan self-hosted runner.

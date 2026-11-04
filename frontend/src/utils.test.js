@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { summarize, validateTitle } from "./utils.js";
+import { buildQuery, emptyMessage, validateTitle } from "./utils.js";
 
-describe("validateTitle", () => {
+describe("validateTitle (fitur tambah & edit)", () => {
   it("menolak judul kosong atau hanya spasi", () => {
     expect(validateTitle("   ").ok).toBe(false);
     expect(validateTitle(undefined).ok).toBe(false);
@@ -14,9 +14,23 @@ describe("validateTitle", () => {
   });
 });
 
-describe("summarize", () => {
-  it("menghitung tugas selesai dan tersisa", () => {
-    const todos = [{ done: true }, { done: false }, { done: false }];
-    expect(summarize(todos)).toEqual({ total: 3, done: 1, remaining: 2 });
+describe("buildQuery (fitur filter & cari)", () => {
+  it("tanpa filter menghasilkan string kosong", () => {
+    expect(buildQuery()).toBe("");
+    expect(buildQuery({ status: "all", q: "  " })).toBe("");
+  });
+  it("menyertakan status dan kata kunci", () => {
+    expect(buildQuery({ status: "done", q: " docker " })).toBe("?status=done&q=docker");
+  });
+  it("meng-encode karakter khusus pada kata kunci", () => {
+    expect(buildQuery({ q: "CI/CD & test" })).toBe("?q=CI%2FCD+%26+test");
+  });
+});
+
+describe("emptyMessage", () => {
+  it("menyesuaikan pesan dengan filter yang aktif", () => {
+    expect(emptyMessage({ q: "abc" })).toContain("abc");
+    expect(emptyMessage({ status: "done" })).toBe("Belum ada tugas yang selesai.");
+    expect(emptyMessage()).toContain("Belum ada tugas");
   });
 });

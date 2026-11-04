@@ -74,11 +74,60 @@ button:hover { background: var(--accent-dark); }
 .list input[type="checkbox"] { width: 18px; height: 18px; }
 .list li.done span { text-decoration: line-through; color: var(--muted); }
 
-.delete {
-  background: transparent;
-  color: var(--danger);
-  padding: 6px 10px;
-}
-.delete:hover { background: #fdecec; }
 
 footer { margin-top: 20px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+
+/* ---------- Fitur filter & cari ---------- */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+}
+.tabs {
+  display: inline-flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+}
+.tab {
+  background: transparent;
+  color: var(--muted);
+  padding: 6px 12px;
+  font-size: 0.88rem;
+}
+.tab:hover { background: #e9edf6; }
+.tab.active { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgba(20, 30, 60, 0.12); }
+.search {
+  flex: 1;
+  min-width: 160px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.92rem;
+}
+.search:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ---------- Fitur edit ---------- */
+.actions { display: flex; gap: 4px; }
+.link {
+  background: transparent;
+  color: var(--accent);
+  padding: 6px 10px;
+}
+.link:hover { background: #eaf1fe; }
+.link.delete { color: var(--danger); }
+.link.delete:hover { background: #fdecec; }
+.edit { display: flex; gap: 8px; width: 100%; }
+.edit input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  font-size: 1rem;
+}
+.secondary { background: #e9edf6; color: var(--text); }
+.secondary:hover { background: #dde3ef; }
