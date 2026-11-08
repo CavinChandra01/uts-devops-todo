@@ -26,7 +26,7 @@ function createRepository(connection, client = "mysql2") {
     },
     // Fitur filter & cari: status = all | active | done, q = kata kunci judul
     async list({ status = "all", q = "" } = {}) {
-      const query = db(TABLE).select("id", "title", "done", "created_at").orderBy("id", "desc");
+      const query = db(TABLE).select("*").orderBy("id", "desc");
       if (status === "active") query.where("done", false);
       if (status === "done") query.where("done", true);
       if (q) query.where("title", "like", `%${q}%`);
@@ -62,7 +62,9 @@ function createRepository(connection, client = "mysql2") {
 }
 
 function normalize(row) {
-  return { id: row.id, title: row.title, done: Boolean(row.done), created_at: row.created_at };
+  // Kolom tambahan dari migrasi baru (misalnya priority) ikut diteruskan ke frontend
+  const { id, title, done, created_at, ...extra } = row;
+  return { id, title, done: Boolean(done), created_at, ...extra };
 }
 
 module.exports = { createRepository };

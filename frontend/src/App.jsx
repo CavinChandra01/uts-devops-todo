@@ -40,6 +40,8 @@ function TodoItem({ todo, onToggle, onRename, onDelete }) {
       <label>
         <input type="checkbox" checked={todo.done} onChange={() => onToggle(todo)} />
         <span>{todo.title}</span>
+        {/* Muncul otomatis jika database punya kolom priority (hasil migrasi) */}
+        {todo.priority && <em className="badge">{todo.priority}</em>}
       </label>
       <div className="actions">
         <button
@@ -202,6 +204,9 @@ export default function App() {
       <footer>
         Frontend {FRONTEND_VERSION} · Backend {info?.version ?? "-"} ·{" "}
         {info?.database ? `MySQL ${info.database}` : "Database tidak terhubung"}
+        {/* Field tambahan dari backend ditampilkan jika tersedia */}
+        {info?.kelompok && <> · Kelompok {info.kelompok}</>}
+        {info?.waktuServer && <> · Waktu server {new Date(info.waktuServer).toLocaleTimeString("id-ID")}</>}
       </footer>
     </div>
   );

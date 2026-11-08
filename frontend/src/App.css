@@ -131,3 +131,14 @@ footer { margin-top: 20px; color: var(--muted); font-size: 0.8rem; text-align: c
 }
 .secondary { background: #e9edf6; color: var(--text); }
 .secondary:hover { background: #dde3ef; }
+
+/* ---------- Label prioritas (muncul setelah migrasi database) ---------- */
+.badge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: var(--accent-dark);
+  font-size: 0.75rem;
+  font-style: normal;
+}
