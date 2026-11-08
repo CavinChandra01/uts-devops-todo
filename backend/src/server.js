@@ -30,7 +30,7 @@ function createApp(repo, { appVersion = "dev", logging = true } = {}) {
   // Info versi (ditampilkan di footer frontend)
   app.get("/api/info", async (req, res, next) => {
     try {
-      res.json({ app: "uts-todo-backend", kelompok: "TheTarik", version: appVersion, database: await repo.version() });
+      res.json({ app: "uts-todo-backend", kelompok: "TheTarik", waktuServer: new Date().toISOString(), version: appVersion, database: await repo.version() });
     } catch (err) {
       next(err);
     }
