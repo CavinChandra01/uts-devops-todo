@@ -140,7 +140,7 @@ export default function App() {
           <h1>
             Daftar Tugas Kelompok <span className="brand">TheTarik</span>
           </h1>
-          <p className="subtitle">Aplikasi full stack React + Express + MySQL yang berjalan di container Docker</p>
+          <p className="subtitle">Catat, kelola, dan selesaikan tugas kelompok bersama. Berjalan di container Docker dengan CI/CD otomatis.</p>
         </header>
 
         <form className="add" onSubmit={handleAdd}>
